@@ -1,21 +1,15 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from NSGA_II import NSGA
+from NEW_NSGA_II import NSGA
 
-evaluation = False
-if evaluation: testTime = 100
-else: testTime = 1
+functionName = ["SCH", "FON", "POL", "KUR", "ZDT2", "ZDT6"]
 
-average = []
-for _ in range(testTime):
-
-    show = False
+for time in range(50):
     ga = NSGA(
-        problem="ZDT2",
-        numIterations=200,
-        crossOverSize=5,
-        populationSize=20,
+        problem=functionName[-2],
+        numIterations=20,
+        populationSize=50,
         )
 
     doubleParents = ga.initPopulation()
@@ -24,47 +18,19 @@ for _ in range(testTime):
     for iterations in range(int(ga.numIterations)):
         #=====main function=====#
         fronts = ga.nonDominatedSorting(doubleParents)
-        distance = ga.calcCrowdingDistance(doubleParents, fronts)
-        parents = ga.selectPopulations(doubleParents, fronts, distance)
-        childs = ga.crossOverAndMutation(parents)
+        parentsIndex = ga.selectPopulations(doubleParents, fronts)
+        bestParents = ga.findBestParameters(doubleParents, fronts)
+        parents, childs = ga.crossOverAndMutation(doubleParents, parentsIndex, bestParents)
         doubleParents = ga.combineByElitismStrategy(parents, childs)
-        best, parent = ga.bestSolution(parents)
 
         #=====loss function=====#
         loss = ga.lossFunction(parents)
         losses.append(loss)
+        print(f"Time: {time}")
         print(f"loss: {loss}")
         print(f"iterations: {iterations}")
-        print(f"Best Parameters: {parent}")
+        print(f"Best Parameters: {bestParents}")
 
-        if show:
-            bound = ga.bound
-            x = np.linspace(bound[0], bound[1], 1000)
-            y1 = ga.f1(x)
-            y2 = ga.f2(x)
-            y = y1 + y2
-            plt.plot(x, y1)
-            plt.plot(x, y2)
-            plt.plot(x, y)
-            if 'sca' in globals(): sca.remove()
-            sca = plt.scatter(parents, ga.f1(parents), s=40, lw=0, c='b', alpha=0.5)
-            if 'sca' in globals(): sca.remove()
-            sca = plt.scatter(parents, ga.f2(parents), s=40, lw=0, c='b', alpha=0.5)
-            plt.pause(0.05)
-
-    plt.plot(np.arange(len(losses)), losses)
-    plt.show()
-
-if evaluation:
-    s = 0
-    count = 0
-    failed = 0
-    for i in range(len(average)):
-        if average[i] != (ga.numIterations - 1):
-            s += average[i]
-            count += 1
-        else:
-            failed += 1
-    print(f"Average iteration: {s / count}")
-    print(f"Success: {len(average) - failed}")
-    print(f"Failed: {failed}")
+    plt.scatter(ga.f(bestParents, 1), ga.f(bestParents, 2))
+    # plt.plot(np.arange(len(losses)), losses)
+plt.show()
